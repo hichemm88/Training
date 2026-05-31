@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Training</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+
+:root{
+  --white:#ffffff;
+  --bg:#f7f6f4;
+  --bg2:#f0efe9;
+  --line:#e8e6e0;
+  --line2:#d4d1c8;
+  --text:#1a1916;
+  --muted:#8a8880;
+  --faint:#c0bdb6;
+  --accent:#1a1916;
+  --serif:'Instrument Serif',Georgia,serif;
+  --sans:'Geist','Helvetica Neue',sans-serif;
+  --mono:'Geist Mono',monospace;
+  --r:10px;
+}
+
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;line-height:1.5}
+
+/* ── SHELL ── */
+.shell{display:flex;flex-direction:column;min-height:100vh;max-width:640px;margin:0 auto;background:var(--white);border-left:1px solid var(--line);border-right:1px solid var(--line)}
+
+/* ── HEADER ── */
+header{padding:20px 24px 0;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--white);z-index:50}
+.hrow{display:flex;align-items:baseline;justify-content:space-between;padding-bottom:16px}
+.site-name{font-family:var(--serif);font-size:22px;font-style:italic;letter-spacing:-.3px}
+.date-str{font-size:12px;color:var(--muted);font-family:var(--mono)}
+
+/* ── BOTTOM NAV ── */
+nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:640px;background:var(--white);border-top:1px solid var(--line);display:flex;z-index:50}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px 16px;font-size:10px;font-weight:500;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);cursor:pointer;border:none;background:transparent;transition:color .15s}
+.nav-btn.on{color:var(--text)}
+.nav-icon{font-size:17px;line-height:1}
+
+/* ── PAGES ── */
+.page{display:none;padding:0 0 80px}
+.page.on{display:block}
+
+/* ── SECTION ── */
+.sec-head{padding:24px 24px 12px;display:flex;align-items:baseline;justify-content:space-between}
+.sec-title{font-family:var(--serif);font-size:20px;font-style:italic}
+.sec-sub{font-size:12px;color:var(--muted)}
+
+/* ── DAY STRIP ── */
+.day-strip{display:flex;gap:0;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
+.day-strip::-webkit-scrollbar{display:none}
+.day-tab{flex:1;min-width:0;padding:14px 6px;text-align:center;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
+.day-tab.on{border-bottom-color:var(--text)}
+.day-tab-name{font-size:11px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--muted)}
+.day-tab.on .day-tab-name{color:var(--text)}
+.day-tab-focus{font-size:9px;color:var(--faint);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.day-tab.on .day-tab-focus{color:var(--muted)}
+
+/* ── BLOCK ── */
+.block{border-bottom:1px solid var(--line);padding:20px 24px}
+.block-label{font-size:10px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.ex-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.ex-row:last-child{border-bottom:none}
+.ex-name{font-size:14px;font-weight:400;display:flex;align-items:center;gap:8px}
+.skill-mark{width:5px;height:5px;border-radius:50%;background:var(--text);display:inline-block;flex-shrink:0}
+.ex-sets{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:right;padding-left:12px;flex-shrink:0}
+.scale-note{margin-top:12px;padding:10px 14px;background:var(--bg);border-radius:var(--r);font-size:12px;color:var(--muted);line-height:1.6}
+.tip-note{margin:0 24px 0;padding:14px;border-left:2px solid var(--line2);font-size:13px;color:var(--muted);line-height:1.6}
+
+/* ── SCORE PANEL ── */
+.score-panel{padding:20px 24px;background:var(--bg);margin:0 16px 16px;border-radius:var(--r)}
+.score-panel-title{font-size:11px;font-weight:500;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+.score-row{display:flex;gap:8px}
+.score-in{flex:1;background:var(--white);border:1px solid var(--line2);border-radius:8px;padding:10px 12px;font-family:var(--mono);font-size:14px;color:var(--text);outline:none;transition:border-color .15s}
+.score-in:focus{border-color:var(--text)}
+.score-in::placeholder{color:var(--faint)}
+.save-btn{background:var(--text);color:var(--white);border:none;border-radius:8px;padding:10px 18px;font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;transition:opacity .15s}
+.save-btn:active{opacity:.7}
+.hist-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--line)}
+.hist-row:last-child{border-bottom:none}
+.hist-date{font-size:11px;color:var(--faint);font-family:var(--mono)}
+.hist-val{font-family:var(--mono);font-size:13px;font-weight:500}
+.hist-del{color:var(--faint);cursor:pointer;font-size:16px;line-height:1;transition:color .1s;padding:0 2px}
+.hist-del:hover{color:var(--text)}
+.no-scores{font-size:13px;color:var(--faint);text-align:center;padding:12px 0}
+
+/* ── TIMER ── */
+.timer-wrap{padding:32px 24px 0;display:flex;flex-direction:column;align-items:center;gap:28px}
+.mode-strip{display:flex;background:var(--bg);border-radius:8px;padding:3px;gap:2px;width:100%}
+.mode-btn{flex:1;padding:8px 4px;border:none;background:transparent;border-radius:6px;font-size:11px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);cursor:pointer;transition:all .15s}
+.mode-btn.on{background:var(--white);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.06)}
+
+.timer-face{position:relative;width:260px;height:260px;display:flex;align-items:center;justify-content:center;flex-direction:column}
+.tring{position:absolute;inset:0;transform:rotate(-90deg)}
+.tring-bg{stroke:var(--line)}
+.tring-fg{stroke:var(--text);stroke-linecap:round;transition:stroke-dashoffset .1s linear}
+.t-time{font-family:var(--serif);font-size:58px;font-style:italic;letter-spacing:-2px;line-height:1;z-index:1}
+.t-sub{font-size:11px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-top:4px;z-index:1}
+.t-round{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:6px;z-index:1}
+
+.timer-btns{display:flex;gap:12px;align-items:center}
+.t-btn{width:52px;height:52px;border-radius:50%;border:1px solid var(--line2);background:var(--white);color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.t-btn:active{background:var(--bg)}
+.t-btn.main{width:64px;height:64px;background:var(--text);color:var(--white);border-color:var(--text);font-size:20px}
+.t-btn.main:active{opacity:.8}
+
+.cfg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%}
+.cfg-box{background:var(--bg);border-radius:var(--r);padding:12px;text-align:center}
+.cfg-label{font-size:9px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.cfg-val{font-family:var(--serif);font-size:30px;font-style:italic;line-height:1;margin-bottom:8px}
+.cfg-btns{display:flex;justify-content:center;gap:6px}
+.c-btn{width:28px;height:28px;border-radius:6px;border:1px solid var(--line2);background:var(--white);font-size:14px;cursor:pointer;color:var(--text);display:flex;align-items:center;justify-content:center}
+.c-btn:active{background:var(--bg2)}
+
+.presets{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;width:100%}
+.preset{padding:6px 14px;border-radius:20px;border:1px solid var(--line2);background:transparent;font-size:12px;color:var(--muted);cursor:pointer;font-family:var(--sans);transition:all .15s}
+.preset:active{background:var(--bg);color:var(--text)}
+.preset:hover{border-color:var(--text);color:var(--text)}
+
+.laps{width:100%;font-family:var(--mono);font-size:12px;color:var(--muted);max-height:100px;overflow-y:auto}
+.lap-row{padding:4px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between}
+
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.blink{animation:blink 1s infinite}
+
+/* ── SCORES PAGE ── */
+.scores-list{padding:0 16px}
+.score-card{background:var(--bg);border-radius:var(--r);padding:18px 20px;margin-bottom:10px}
+.sc-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
+.sc-name{font-size:14px;font-weight:500}
+.sc-best{font-family:var(--mono);font-size:18px;font-weight:500}
+.sc-sub{font-size:12px;color:var(--muted);margin-bottom:10px}
+.sparkline{display:flex;align-items:flex-end;gap:3px;height:32px;margin-top:8px}
+.spark-bar{flex:1;border-radius:2px;background:var(--line2);min-height:3px}
+.spark-bar.peak{background:var(--text)}
+.sc-count{font-size:11px;color:var(--faint);margin-top:6px}
+
+/* ── PROGRESSIONS ── */
+.prog-list{padding:0 16px}
+.prog-card{background:var(--bg);border-radius:var(--r);padding:18px 20px;margin-bottom:10px}
+.prog-name{font-size:15px;font-weight:500;margin-bottom:2px}
+.prog-sub{font-size:12px;color:var(--muted);margin-bottom:14px}
+.lvl-row{display:flex;align-items:center;gap:12px;padding:7px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.lvl-row:last-child{border-bottom:none}
+.lvl-circle{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--line2);display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;transition:all .2s}
+.lvl-circle.done{background:var(--text);border-color:var(--text);color:var(--white)}
+.lvl-text{font-size:13px;color:var(--muted);transition:color .15s}
+.lvl-row .lvl-text.done{color:var(--text)}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--text);color:var(--white);padding:10px 20px;border-radius:20px;font-size:13px;opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap;z-index:200}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── RESPONSIVE ── */
+@media(min-width:641px){
+  .shell{border-radius:16px;margin:24px auto;min-height:calc(100vh - 48px)}
+  nav{border-radius:0 0 16px 16px;max-width:638px}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <div class="hrow">
+      <div class="site-name">Training</div>
+      <div class="date-str" id="dateStr"></div>
+    </div>
+    <div class="day-strip" id="dayStrip"></div>
+  </header>
+
+  <!-- PROGRAMME -->
+  <div class="page on" id="p-prog">
+    <div id="dayDetail"></div>
+  </div>
+
+  <!-- TIMER -->
+  <div class="page" id="p-timer">
+    <div class="timer-wrap">
+      <div class="mode-strip">
+        <button class="mode-btn on" onclick="setMode('countdown')">Compte</button>
+        <button class="mode-btn" onclick="setMode('stopwatch')">Chrono</button>
+        <button class="mode-btn" onclick="setMode('tabata')">Tabata</button>
+        <button class="mode-btn" onclick="setMode('amrap')">AMRAP</button>
+      </div>
+      <div class="timer-face">
+        <svg class="tring" viewBox="0 0 260 260">
+          <circle class="tring-bg" cx="130" cy="130" r="118" fill="none" stroke-width="3"/>
+          <circle class="tring-fg" id="tring" cx="130" cy="130" r="118" fill="none" stroke-width="3"
+            stroke-dasharray="741" stroke-dashoffset="0"/>
+        </svg>
+        <div class="t-time" id="tDisp">00:00</div>
+        <div class="t-sub" id="tSub">Prêt</div>
+        <div class="t-round" id="tRound"></div>
+      </div>
+      <div class="timer-btns">
+        <button class="t-btn" onclick="tReset()">↺</button>
+        <button class="t-btn main" id="tPlayBtn" onclick="tToggle()">▶</button>
+        <button class="t-btn" onclick="tLap()">+</button>
+      </div>
+      <div class="cfg-grid" id="cfgGrid">
+        <div class="cfg-box">
+          <div class="cfg-label">Min</div>
+          <div class="cfg-val" id="cfgM">08</div>
+          <div class="cfg-btns">
+            <button class="c-btn" onclick="adj('m',-1)">−</button>
+            <button class="c-btn" onclick="adj('m',1)">+</button>
+          </div>
+        </div>
+        <div class="cfg-box">
+          <div class="cfg-label">Sec</div>
+          <div class="cfg-val" id="cfgS">00</div>
+          <div class="cfg-btns">
+            <button class="c-btn" onclick="adj('s',-15)">−</button>
+            <button class="c-btn" onclick="adj('s',15)">+</button>
+          </div>
+        </div>
+        <div class="cfg-box" id="cfgR">
+          <div class="cfg-label" id="cfgRLabel">Rounds</div>
+          <div class="cfg-val" id="cfgRV">08</div>
+          <div class="cfg-btns">
+            <button class="c-btn" onclick="adj('r',-1)">−</button>
+            <button class="c-btn" onclick="adj('r',1)">+</button>
+          </div>
+        </div>
+      </div>
+      <div class="presets">
+        <button class="preset" onclick="preset('amrap8')">AMRAP 8</button>
+        <button class="preset" onclick="preset('amrap6')">AMRAP 6</button>
+        <button class="preset" onclick="preset('tabata')">Tabata 20/10</button>
+        <button class="preset" onclick="preset('r90')">Repos 90s</button>
+        <button class="preset" onclick="preset('r120')">Repos 2min</button>
+      </div>
+      <div class="laps" id="lapLog"></div>
+    </div>
+  </div>
+
+  <!-- SCORES -->
+  <div class="page" id="p-scores">
+    <div class="sec-head"><div class="sec-title">Mes scores</div></div>
+    <div class="scores-list" id="scoresList"></div>
+  </div>
+
+  <!-- PROGRESSIONS -->
+  <div class="page" id="p-prog2">
+    <div class="sec-head"><div class="sec-title">Progressions</div></div>
+    <div class="prog-list" id="progList"></div>
+  </div>
+</div>
+
+<nav>
+  <button class="nav-btn on" onclick="go('prog',0)"><span class="nav-icon">◻</span>Programme</button>
+  <button class="nav-btn" onclick="go('timer',1)"><span class="nav-icon">◷</span>Chrono</button>
+  <button class="nav-btn" onclick="go('scores',2)"><span class="nav-icon">↗</span>Scores</button>
+  <button class="nav-btn" onclick="go('prog2',3)"><span class="nav-icon">≡</span>Niveaux</button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── DATA ───
+const DAYS=[
+{id:'lun',name:'Lun',focus:'Push + HSPU',bm:{key:'amrap_lun',lbl:'AMRAP 8 min',unit:'rounds',ph:'ex: 4'},
+ blocks:[
+  {lbl:'Échauffement · 7 min',ex:[{n:'Double unders',s:'3 × 30 sec',sk:1},{n:'Mobilité épaules',s:'2 min'},{n:'Kick to wall',s:'10 reps'}]},
+  {lbl:'Skill — HSPU · 10 min',ex:[{n:'HSPU strict contre mur',s:'5 × 3–5',sk:1},{n:'Repos',s:'2 min'}],sc:'Pike push-up → Déficit pike → HSPU banded → HSPU strict'},
+  {lbl:'Force · 4 rounds · repos 90s',ex:[{n:'Dips',s:'4 × 10–12'},{n:'Push-ups prise large',s:'4 × 15'},{n:'Hollow hold',s:'4 × 25s'}]},
+  {lbl:'Finisher AMRAP 8 min',ex:[{n:'5 HSPU',s:'',sk:1},{n:'10 dips',s:''},{n:'50 double unders',s:'',sk:1}]}
+ ],tip:'Les DU remplacent les sprints. Sans corde : 100 singles ou 30s de saut.'},
+
+{id:'mar',name:'Mar',focus:'Pull + TTB',bm:{key:'amrap_mar',lbl:'AMRAP 6 min',unit:'rounds',ph:'ex: 5'},
+ blocks:[
+  {lbl:'Échauffement · 6 min',ex:[{n:'Scapular pull-ups × 10',s:'activation'},{n:'Dead hang',s:'2 × 30s'},{n:'Knee raise lent × 10',s:''}]},
+  {lbl:'Skill — Toes to Bar · 10 min',ex:[{n:'Toes to bar strict',s:'5 × 5–8',sk:1},{n:'Repos',s:'90s'}],sc:'Knee raise → Toes to knee → TTB kipping → TTB strict'},
+  {lbl:'Force · 5 rounds · repos 2min',ex:[{n:'Tractions pronation',s:'5 × 5–8'},{n:'Australian pull-ups',s:'5 × 12'},{n:'Toes to bar',s:'5 × 8–10',sk:1}]},
+  {lbl:'Finisher AMRAP 6 min',ex:[{n:'5 tractions',s:''},{n:'10 toes to bar',s:'',sk:1},{n:'30 double unders',s:'',sk:1}]}
+ ],tip:'Le TTB = activation dorsaux en dead hang avant chaque série. Corps entier, pas que les abdos.'},
+
+{id:'mer',name:'Mer',focus:'HIIT + MU',bm:{key:'hiit_mer',lbl:'Rounds HIIT',unit:'/5',ph:'ex: 5'},
+ blocks:[
+  {lbl:'Échauffement · 5 min',ex:[{n:'Run 400m',s:''},{n:'Practice double unders',s:'3 × 20',sk:1}]},
+  {lbl:'HIIT · 5 rounds · repos 2min',ex:[{n:'50 double unders',s:'ou 200m sprint',sk:1},{n:'Burpees',s:'40s'},{n:'Box jumps banc',s:'40s'},{n:'Mountain climbers',s:'40s'}]},
+  {lbl:'Skill — Muscle-up · 10 min si dispo',ex:[{n:'Muscle-up barre',s:'3–5 × 1–3',sk:1},{n:'Repos complet',s:'qualité absolue'}],sc:'Jumping MU → Banded MU → MU élan → MU strict'}
+ ],tip:'Ne fais jamais le muscle-up fatigué. Si séance chargée, déplace le skill MU au vendredi.'},
+
+{id:'jeu',name:'Jeu',focus:'Jambes + DU',bm:{key:'ft_jeu',lbl:'Finisher for time',unit:'min:sec',ph:'ex: 7:42'},
+ blocks:[
+  {lbl:'Échauffement · 5 min',ex:[{n:'Fentes marchées × 20',s:''},{n:'Squat BW lent × 15',s:''},{n:'Double unders practice',s:'3 × 20',sk:1}]},
+  {lbl:'Force · 4 rounds · repos 90s',ex:[{n:'Pistol squat (ou assisted)',s:'4 × 6/jambe'},{n:'Squat jump',s:'4 × 12'},{n:'Fentes sautées',s:'4 × 10'},{n:'Step-ups sur banc',s:'4 × 12/jambe'}]},
+  {lbl:'Finisher For Time',ex:[{n:'100 double unders',s:'',sk:1},{n:'50 squats',s:''},{n:'100 double unders',s:'',sk:1},{n:'400m run',s:''}]}
+ ],tip:'DU avant et après squats = simulation parfaite fatigue jambes en compétition.'},
+
+{id:'ven',name:'Ven',focus:'WOD Benchmark',bm:{key:'wod_ven',lbl:'WOD 3 rounds for time',unit:'min:sec',ph:'ex: 22:15'},
+ blocks:[
+  {lbl:'Échauffement · 8 min',ex:[{n:'400m run',s:''},{n:'2 rounds : push-ups + squats + tractions',s:''},{n:'30 double unders × 2',s:'',sk:1}]},
+  {lbl:'WOD · 3 rounds for time',ex:[{n:'3 muscle-ups',s:'ou 6 tractions + 6 dips',sk:1},{n:'50 double unders',s:'',sk:1},{n:'10 toes to bar',s:'',sk:1},{n:'10 HSPU',s:'ou 15 pike push-ups',sk:1},{n:'20 squat jumps',s:''}]},
+  {lbl:'Run final',ex:[{n:'1 km allure libre',s:'cool down'}]}
+ ],tip:'Ce WOD intègre les 4 skills. Note ton temps semaine 1 — ta référence pour l\'année.'}
+];
+
+const BMS=[
+  {key:'wod_ven',lbl:'WOD Vendredi',sub:'3 rounds for time',unit:'min:sec'},
+  {key:'amrap_lun',lbl:'AMRAP Lundi',sub:'8 min',unit:'rounds'},
+  {key:'amrap_mar',lbl:'AMRAP Mardi',sub:'6 min',unit:'rounds'},
+  {key:'ft_jeu',lbl:'Finisher Jeudi',sub:'For time',unit:'min:sec'},
+];
+
+const PROGS=[
+  {n:'Double Unders',sub:'Objectif : 50 unbroken',levels:['Simple under fluide (200+)','1 DU isolé à la fois','Singles + 1 DU en rythme','Sets de 5–10 DU consécutifs','50+ unbroken — RX']},
+  {n:'Toes to Bar',sub:'Objectif : 10 unbroken',levels:['Knee raise (genoux à coudes)','Toes to knee strict','TTB un par un strict','TTB kipping','10 TTB unbroken — RX']},
+  {n:'Muscle-Up',sub:'Objectif : 3 unbroken',levels:['10 tractions + 10 dips solides','Jumping muscle-up','MU avec bande élastique','1 MU kipping','3 MU unbroken — RX']},
+  {n:'Handstand Push-Up',sub:'Objectif : 10 unbroken',levels:['Pike push-up à plat','Pike push-up pieds sur banc','HSPU contre mur','HSPU strict 5+ reps','10 HSPU unbroken — RX']},
+];
+
+// ─── STATE ───
+let activeDay=0;
+
+// ─── UTILS ───
+function gd(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}}
+function sd(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
+function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+
+// ─── NAV ───
+function go(pg,idx){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('on'));
+  document.getElementById('p-'+pg).classList.add('on');
+  document.querySelectorAll('.nav-btn')[idx].classList.add('on');
+  if(pg==='scores')renderScores();
+  if(pg==='prog2')renderProgs();
+}
+
+// ─── DAY STRIP ───
+function renderStrip(){
+  const el=document.getElementById('dayStrip');
+  el.innerHTML=DAYS.map((d,i)=>`
+    <div class="day-tab ${i===activeDay?'on':''}" onclick="selDay(${i})">
+      <div class="day-tab-name">${d.name}</div>
+      <div class="day-tab-focus">${d.focus}</div>
+    </div>`).join('');
+}
+
+function selDay(i){activeDay=i;renderStrip();renderDay()}
+
+function renderDay(){
+  const d=DAYS[activeDay];
+  const scores=gd('s_'+d.bm.key,[]);
+  const hist=scores.length
+    ? scores.slice().reverse().slice(0,5).map((s,i)=>`
+        <div class="hist-row">
+          <span class="hist-date">${s.date}</span>
+          <span class="hist-val">${s.score} ${d.bm.unit}</span>
+          <span class="hist-del" onclick="delScore('${d.bm.key}',${scores.length-1-i})">×</span>
+        </div>`).join('')
+    : '<div class="no-scores">Aucun score</div>';
+
+  const blocks=d.blocks.map(b=>`
+    <div class="block">
+      <div class="block-label">${b.lbl}</div>
+      ${b.ex.map(e=>`
+        <div class="ex-row">
+          <span class="ex-name">${e.sk?'<span class="skill-mark"></span>':''}${e.n}</span>
+          <span class="ex-sets">${e.s}</span>
+        </div>`).join('')}
+      ${b.sc?`<div class="scale-note">${b.sc}</div>`:''}
+    </div>`).join('');
+
+  document.getElementById('dayDetail').innerHTML=`
+    ${blocks}
+    <div class="tip-note">${d.tip}</div>
+    <div class="score-panel" style="margin-top:16px">
+      <div class="score-panel-title">${d.bm.lbl}</div>
+      <div class="score-row">
+        <input class="score-in" id="sin_${d.bm.key}" placeholder="${d.bm.ph}"/>
+        <button class="save-btn" onclick="saveScore('${d.bm.key}')">Sauver</button>
+      </div>
+      ${scores.length?`<div style="margin-top:12px">${hist}</div>`:''}
+    </div>`;
+}
+
+function saveScore(key){
+  const el=document.getElementById('sin_'+key);
+  const v=el.value.trim(); if(!v)return;
+  const arr=gd('s_'+key,[]);
+  const now=new Date();
+  arr.push({score:v,date:now.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'2-digit'}),ts:Date.now()});
+  sd('s_'+key,arr); el.value=''; toast('Score sauvegardé');
+  renderDay(); renderStrip();
+}
+
+function delScore(key,idx){
+  const arr=gd('s_'+key,[]); arr.splice(idx,1); sd('s_'+key,arr); renderDay();
+}
+
+// ─── SCORES PAGE ───
+function renderScores(){
+  document.getElementById('scoresList').innerHTML=BMS.map(b=>{
+    const arr=gd('s_'+b.key,[]);
+    const last=arr.length?arr[arr.length-1].score:'—';
+    const vals=arr.map(s=>{const v=parseFloat(s.score.replace(':','.'));return isNaN(v)?0:v});
+    const mx=vals.length?Math.max(...vals):1;
+    const bars=vals.slice(-8).map((v,i)=>{
+      const h=mx>0?Math.max(3,Math.round((v/mx)*32)):3;
+      const peak=(v===mx);
+      return `<div class="spark-bar ${peak?'peak':''}" style="height:${h}px"></div>`;
+    }).join('');
+    return `<div class="score-card">
+      <div class="sc-head"><div class="sc-name">${b.lbl}</div><div class="sc-best">${last}</div></div>
+      <div class="sc-sub">${b.sub} · ${b.unit}</div>
+      ${arr.length>1?`<div class="sparkline">${bars}</div>`:''}
+      <div class="sc-count">${arr.length} entrée${arr.length!==1?'s':''}</div>
+    </div>`;
+  }).join('');
+}
+
+// ─── PROGS ───
+function renderProgs(){
+  document.getElementById('progList').innerHTML=PROGS.map(p=>{
+    const saved=gd('prg_'+p.n,0);
+    return `<div class="prog-card">
+      <div class="prog-name">${p.n}</div>
+      <div class="prog-sub">${p.sub}</div>
+      ${p.levels.map((l,i)=>`
+        <div class="lvl-row" onclick="setLvl('${p.n}',${i})">
+          <div class="lvl-circle ${i<=saved?'done':''}">${i<=saved?'✓':''}</div>
+          <div class="lvl-text ${i<=saved?'done':''}">${l}</div>
+        </div>`).join('')}
+    </div>`;
+  }).join('');
+}
+
+function setLvl(name,idx){sd('prg_'+name,idx);renderProgs();toast('Niveau mis à jour')}
+
+// ─── TIMER ───
+const CIRC=2*Math.PI*118;
+let tMode='countdown',tRunning=false,tInterval=null;
+let cM=8,cS=0,cR=8,tSec=480,tTotal=480;
+let tabPhase='work',tabRem=20,tabRound=1;
+let swMs=0,swStart=null;
+let laps=[];
+
+function setMode(m){
+  tMode=m;
+  document.querySelectorAll('.mode-btn').forEach((b,i)=>{b.classList.toggle('on',['countdown','stopwatch','tabata','amrap'][i]===m)});
+  const cfg=document.getElementById('cfgGrid');
+  const rbox=document.getElementById('cfgR');
+  cfg.style.display=m==='stopwatch'?'none':'grid';
+  rbox.style.display=m==='tabata'||m==='amrap'?'block':'none';
+  document.getElementById('cfgRLabel').textContent=m==='amrap'?'Min':'Rounds';
+  tReset();
+}
+
+function adj(f,d){
+  if(f==='m'){cM=Math.max(0,cM+d);document.getElementById('cfgM').textContent=String(cM).padStart(2,'0')}
+  if(f==='s'){cS=Math.max(0,Math.min(59,cS+d));document.getElementById('cfgS').textContent=String(cS).padStart(2,'0')}
+  if(f==='r'){if(tMode==='amrap'){cM=Math.max(1,cM+d);document.getElementById('cfgRV').textContent=String(cM).padStart(2,'0')}else{cR=Math.max(1,cR+d);document.getElementById('cfgRV').textContent=String(cR).padStart(2,'0')}}
+  if(!tRunning)tReset();
+}
+
+function preset(p){
+  const map={amrap8:{mode:'amrap',m:8,s:0,r:8},amrap6:{mode:'amrap',m:6,s:0,r:6},tabata:{mode:'tabata',m:0,s:20,r:8},r90:{mode:'countdown',m:1,s:30,r:1},r120:{mode:'countdown',m:2,s:0,r:1}};
+  const cfg=map[p]; if(!cfg)return;
+  tMode=cfg.mode; cM=cfg.m; cS=cfg.s; cR=cfg.r;
+  document.getElementById('cfgM').textContent=String(cM).padStart(2,'0');
+  document.getElementById('cfgS').textContent=String(cS).padStart(2,'0');
+  document.getElementById('cfgRV').textContent=String(cR).padStart(2,'0');
+  document.querySelectorAll('.mode-btn').forEach((b,i)=>{b.classList.toggle('on',['countdown','stopwatch','tabata','amrap'][i]===tMode)});
+  setMode(tMode);
+}
+
+function tReset(){
+  clearInterval(tInterval); tRunning=false; laps=[];
+  document.getElementById('tPlayBtn').textContent='▶';
+  document.getElementById('lapLog').innerHTML='';
+  document.getElementById('tDisp').classList.remove('blink');
+  tabPhase='work'; tabRem=20; tabRound=1; swMs=0;
+  if(tMode==='stopwatch'){setDisp('00:00','Prêt','');setRing(0);}
+  else if(tMode==='tabata'){tSec=20;tTotal=20;setDisp(fmt(20),'WORK',`Round 1 / ${cR}`);setRing(1);}
+  else{tSec=cM*60+cS;tTotal=tSec;setDisp(fmt(tSec),tMode==='amrap'?'AMRAP':'Prêt','');setRing(1);}
+}
+
+function tToggle(){
+  if(tMode==='stopwatch'){
+    if(tRunning){clearInterval(tInterval);tRunning=false;document.getElementById('tPlayBtn').textContent='▶';}
+    else{swStart=Date.now()-swMs;tInterval=setInterval(()=>{swMs=Date.now()-swStart;setDisp(fmt(Math.floor(swMs/1000)),'En cours','');},100);tRunning=true;document.getElementById('tPlayBtn').textContent='⏸';}
+    return;
+  }
+  if(tRunning){clearInterval(tInterval);tRunning=false;document.getElementById('tPlayBtn').textContent='▶';}
+  else{
+    if(tSec<=0&&tMode!=='tabata')tReset();
+    tRunning=true; document.getElementById('tPlayBtn').textContent='⏸';
+    tInterval=setInterval(tMode==='tabata'?tabTick:cdTick,1000);
+  }
+}
+
+function cdTick(){
+  tSec--;
+  if(tSec<=0){tSec=0;setDisp('00:00',tMode==='amrap'?'Time!':'Terminé!','');setRing(0);clearInterval(tInterval);tRunning=false;document.getElementById('tPlayBtn').textContent='▶';document.getElementById('tDisp').classList.add('blink');beep();return;}
+  setRing(tTotal>0?tSec/tTotal:0); setDisp(fmt(tSec),tMode==='amrap'?'AMRAP':'','');
+  if(tSec<=3)beep();
+}
+
+function tabTick(){
+  tabRem--;
+  if(tabRem<=0){
+    if(tabPhase==='work'){tabPhase='rest';tabRem=10;beep();setDisp(fmt(tabRem),'REST',`Round ${tabRound} / ${cR}`);}
+    else{tabRound++;if(tabRound>cR){setDisp('00:00','Terminé!',`${cR} rounds`);clearInterval(tInterval);tRunning=false;document.getElementById('tPlayBtn').textContent='▶';document.getElementById('tDisp').classList.add('blink');beep();return;}tabPhase='work';tabRem=20;beep();}
+  }
+  const total=tabPhase==='work'?20:10;
+  setRing(tabRem/total); setDisp(fmt(tabRem),tabPhase==='work'?'WORK':'REST',`Round ${tabRound} / ${cR}`);
+  if(tabRem<=3)beep();
+}
+
+function tLap(){
+  const v=tMode==='stopwatch'?fmt(Math.floor(swMs/1000)):fmt(tSec);
+  laps.push(v);
+  const el=document.getElementById('lapLog');
+  el.innerHTML=laps.map((l,i)=>`<div class="lap-row"><span>Lap ${i+1}</span><span>${l}</span></div>`).join('');
+}
+
+function setDisp(t,s,r){document.getElementById('tDisp').textContent=t;document.getElementById('tSub').textContent=s;document.getElementById('tRound').textContent=r;}
+function setRing(r){document.getElementById('tring').style.strokeDashoffset=CIRC*(1-r);}
+function beep(){try{const c=new(window.AudioContext||window.webkitAudioContext)();const o=c.createOscillator();const g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=660;g.gain.setValueAtTime(.25,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.12);o.start();o.stop(c.currentTime+.12);}catch(e){}}
+
+// ─── INIT ───
+const now=new Date();
+document.getElementById('dateStr').textContent=now.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
+renderStrip();
+renderDay();
+</script>
+</body>
+</html>
