@@ -105,8 +105,9 @@ nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-w
 .timer-btns{display:flex;gap:12px;align-items:center}
 .t-btn{width:52px;height:52px;border-radius:50%;border:1px solid var(--line2);background:var(--white);color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
 .t-btn:active{background:var(--bg)}
-.t-btn.main{width:64px;height:64px;background:var(--text);color:var(--white);border-color:var(--text);font-size:20px}
+.t-btn.main{width:64px;height:64px;background:var(--text);color:var(--white);border-color:var(--text);font-size:20px;font-family:var(--sans)}
 .t-btn.main:active{opacity:.8}
+.t-btn.main.paused{background:var(--white);color:var(--text);border-color:var(--text)}
 
 .cfg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%}
 .cfg-box{background:var(--bg);border-radius:var(--r);padding:12px;text-align:center}
@@ -197,9 +198,9 @@ nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-w
         <div class="t-round" id="tRound"></div>
       </div>
       <div class="timer-btns">
-        <button class="t-btn" onclick="tReset()">↺</button>
-        <button class="t-btn main" id="tPlayBtn" onclick="tToggle()">▶</button>
-        <button class="t-btn" onclick="tLap()">+</button>
+        <button class="t-btn" onclick="tReset()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg></button>
+        <button class="t-btn main" id="tPlayBtn" onclick="tToggle()"><svg id="playIcon" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg><svg id="pauseIcon" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" style="display:none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg></button>
+        <button class="t-btn" onclick="tLap()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></button>
       </div>
       <div class="cfg-grid" id="cfgGrid">
         <div class="cfg-box">
@@ -474,7 +475,7 @@ function preset(p){
 
 function tReset(){
   clearInterval(tInterval); tRunning=false; laps=[];
-  document.getElementById('tPlayBtn').textContent='▶';
+  setPauseBtn(false);
   document.getElementById('lapLog').innerHTML='';
   document.getElementById('tDisp').classList.remove('blink');
   tabPhase='work'; tabRem=20; tabRound=1; swMs=0;
@@ -484,17 +485,24 @@ function tReset(){
 }
 
 function tToggle(){
+  unlockAudio();
   if(tMode==='stopwatch'){
-    if(tRunning){clearInterval(tInterval);tRunning=false;document.getElementById('tPlayBtn').textContent='▶';}
-    else{swStart=Date.now()-swMs;tInterval=setInterval(()=>{swMs=Date.now()-swStart;setDisp(fmt(Math.floor(swMs/1000)),'En cours','');},100);tRunning=true;document.getElementById('tPlayBtn').textContent='⏸';}
+    if(tRunning){clearInterval(tInterval);tRunning=false;setPauseBtn(false);}
+    else{swStart=Date.now()-swMs;tInterval=setInterval(()=>{swMs=Date.now()-swStart;setDisp(fmt(Math.floor(swMs/1000)),'En cours','');},100);tRunning=true;setPauseBtn(true);}
     return;
   }
-  if(tRunning){clearInterval(tInterval);tRunning=false;document.getElementById('tPlayBtn').textContent='▶';}
+  if(tRunning){clearInterval(tInterval);tRunning=false;setPauseBtn(false);}
   else{
     if(tSec<=0&&tMode!=='tabata')tReset();
-    tRunning=true; document.getElementById('tPlayBtn').textContent='⏸';
+    tRunning=true;setPauseBtn(true);
     tInterval=setInterval(tMode==='tabata'?tabTick:cdTick,1000);
   }
+}
+
+function setPauseBtn(running){
+  document.getElementById('playIcon').style.display=running?'none':'block';
+  document.getElementById('pauseIcon').style.display=running?'block':'none';
+  document.getElementById('tPlayBtn').classList.toggle('paused',running);
 }
 
 function cdTick(){
@@ -557,11 +565,9 @@ function beepEnd(){beep(880,0.08,0.5);setTimeout(()=>beep(880,0.08,0.5),120);set
 function beepCountdown(){beep(550,0.1,0.35);}
 function beepTransition(){beep(770,0.2,0.5);}
 
-// Patch ticks to use better beeps
-const _cdTick=cdTick;
 function cdTick(){
   tSec--;
-  if(tSec<=0){tSec=0;setDisp('00:00',tMode==='amrap'?'Time!':'Terminé!','');setRing(0);clearInterval(tInterval);tRunning=false;document.getElementById('tPlayBtn').textContent='▶';document.getElementById('tDisp').classList.add('blink');beepEnd();return;}
+  if(tSec<=0){tSec=0;setDisp('00:00',tMode==='amrap'?'Time!':'Terminé!','');setRing(0);clearInterval(tInterval);tRunning=false;setPauseBtn(false);document.getElementById('tDisp').classList.add('blink');beepEnd();return;}
   setRing(tTotal>0?tSec/tTotal:0);setDisp(fmt(tSec),tMode==='amrap'?'AMRAP':'','');
   if(tSec<=3)beepCountdown();
 }
@@ -569,7 +575,7 @@ function tabTick(){
   tabRem--;
   if(tabRem<=0){
     if(tabPhase==='work'){tabPhase='rest';tabRem=10;beepTransition();setDisp(fmt(tabRem),'REST',`Round ${tabRound} / ${cR}`);}
-    else{tabRound++;if(tabRound>cR){setDisp('00:00','Terminé!',`${cR} rounds`);clearInterval(tInterval);tRunning=false;document.getElementById('tPlayBtn').textContent='▶';document.getElementById('tDisp').classList.add('blink');beepEnd();return;}tabPhase='work';tabRem=20;beepTransition();}
+    else{tabRound++;if(tabRound>cR){setDisp('00:00','Terminé!',`${cR} rounds`);clearInterval(tInterval);tRunning=false;setPauseBtn(false);document.getElementById('tDisp').classList.add('blink');beepEnd();return;}tabPhase='work';tabRem=20;beepTransition();}
   }
   const total=tabPhase==='work'?20:10;
   setRing(tabRem/total);setDisp(fmt(tabRem),tabPhase==='work'?'WORK':'REST',`Round ${tabRound} / ${cR}`);
