@@ -524,7 +524,57 @@ function tLap(){
 
 function setDisp(t,s,r){document.getElementById('tDisp').textContent=t;document.getElementById('tSub').textContent=s;document.getElementById('tRound').textContent=r;}
 function setRing(r){document.getElementById('tring').style.strokeDashoffset=CIRC*(1-r);}
-function beep(){try{const c=new(window.AudioContext||window.webkitAudioContext)();const o=c.createOscillator();const g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=660;g.gain.setValueAtTime(.25,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.12);o.start();o.stop(c.currentTime+.12);}catch(e){}}
+
+// ─── AUDIO (iOS-safe) ───
+let audioCtx=null;
+function unlockAudio(){
+  if(audioCtx)return;
+  audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  // Play a silent buffer to unlock iOS
+  const buf=audioCtx.createBuffer(1,1,22050);
+  const src=audioCtx.createBufferSource();
+  src.buffer=buf; src.connect(audioCtx.destination); src.start(0);
+}
+document.addEventListener('touchstart',unlockAudio,{once:true});
+document.addEventListener('click',unlockAudio,{once:true});
+
+function beep(freq=660,dur=0.15,vol=0.4){
+  try{
+    if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state==='suspended')audioCtx.resume();
+    const o=audioCtx.createOscillator();
+    const g=audioCtx.createGain();
+    o.connect(g); g.connect(audioCtx.destination);
+    o.frequency.value=freq;
+    o.type='sine';
+    g.gain.setValueAtTime(vol,audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+dur);
+    o.start(audioCtx.currentTime);
+    o.stop(audioCtx.currentTime+dur);
+  }catch(e){console.log('audio:',e)}
+}
+function beepEnd(){beep(880,0.08,0.5);setTimeout(()=>beep(880,0.08,0.5),120);setTimeout(()=>beep(1100,0.3,0.6),280);}
+function beepCountdown(){beep(550,0.1,0.35);}
+function beepTransition(){beep(770,0.2,0.5);}
+
+// Patch ticks to use better beeps
+const _cdTick=cdTick;
+function cdTick(){
+  tSec--;
+  if(tSec<=0){tSec=0;setDisp('00:00',tMode==='amrap'?'Time!':'Terminé!','');setRing(0);clearInterval(tInterval);tRunning=false;document.getElementById('tPlayBtn').textContent='▶';document.getElementById('tDisp').classList.add('blink');beepEnd();return;}
+  setRing(tTotal>0?tSec/tTotal:0);setDisp(fmt(tSec),tMode==='amrap'?'AMRAP':'','');
+  if(tSec<=3)beepCountdown();
+}
+function tabTick(){
+  tabRem--;
+  if(tabRem<=0){
+    if(tabPhase==='work'){tabPhase='rest';tabRem=10;beepTransition();setDisp(fmt(tabRem),'REST',`Round ${tabRound} / ${cR}`);}
+    else{tabRound++;if(tabRound>cR){setDisp('00:00','Terminé!',`${cR} rounds`);clearInterval(tInterval);tRunning=false;document.getElementById('tPlayBtn').textContent='▶';document.getElementById('tDisp').classList.add('blink');beepEnd();return;}tabPhase='work';tabRem=20;beepTransition();}
+  }
+  const total=tabPhase==='work'?20:10;
+  setRing(tabRem/total);setDisp(fmt(tabRem),tabPhase==='work'?'WORK':'REST',`Round ${tabRound} / ${cR}`);
+  if(tabRem<=3)beepCountdown();
+}
 
 // ─── INIT ───
 const now=new Date();
