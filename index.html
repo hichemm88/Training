@@ -443,6 +443,9 @@ let cM=8,cS=0,cR=8,tSec=480,tTotal=480;
 let tabPhase='work',tabRem=20,tabRound=1;
 let swMs=0,swStart=null;
 let laps=[];
+// Wall-clock refs so timer survives screen lock
+let _startWall=null,_secAtStart=0;
+let _tabWall=null,_tabRemAtStart=0,_tabPhaseLen=20;
 
 function setMode(m){
   tMode=m;
@@ -487,15 +490,21 @@ function tReset(){
 function tToggle(){
   unlockAudio();
   if(tMode==='stopwatch'){
-    if(tRunning){clearInterval(tInterval);tRunning=false;setPauseBtn(false);}
-    else{swStart=Date.now()-swMs;tInterval=setInterval(()=>{swMs=Date.now()-swStart;setDisp(fmt(Math.floor(swMs/1000)),'En cours','');},100);tRunning=true;setPauseBtn(true);}
+    if(tRunning){swMs=Date.now()-swStart;clearInterval(tInterval);tRunning=false;setPauseBtn(false);}
+    else{swStart=Date.now()-swMs;tInterval=setInterval(()=>{const s=Math.floor((Date.now()-swStart)/1000);setDisp(fmt(s),'En cours','');},200);tRunning=true;setPauseBtn(true);}
     return;
   }
-  if(tRunning){clearInterval(tInterval);tRunning=false;setPauseBtn(false);}
-  else{
+  if(tRunning){
+    // Pause: save remaining
+    if(tMode==='tabata'){_tabRemAtStart=Math.max(0,_tabPhaseLen-Math.floor((Date.now()-_tabWall)/1000));}
+    else{tSec=Math.max(0,_secAtStart-Math.floor((Date.now()-_startWall)/1000));}
+    clearInterval(tInterval);tRunning=false;setPauseBtn(false);
+  } else {
     if(tSec<=0&&tMode!=='tabata')tReset();
     tRunning=true;setPauseBtn(true);
-    tInterval=setInterval(tMode==='tabata'?tabTick:cdTick,1000);
+    if(tMode==='tabata'){_tabWall=Date.now();_tabRemAtStart=tabRem;_tabPhaseLen=tabPhase==='work'?20:10;}
+    else{_startWall=Date.now();_secAtStart=tSec;}
+    tInterval=setInterval(tMode==='tabata'?tabTick:cdTick,200);
   }
 }
 
@@ -557,25 +566,42 @@ function beepTransition(){ playSound('trans'); }
 function beepEnd(){ playSound('end'); }
 
 function cdTick(){
-  tSec--;
+  const elapsed=Math.floor((Date.now()-_startWall)/1000);
+  const prev=tSec;
+  tSec=Math.max(0,_secAtStart-elapsed);
   if(tSec<=0){tSec=0;setDisp('00:00',tMode==='amrap'?'Time!':'Terminé!','');setRing(0);clearInterval(tInterval);tRunning=false;setPauseBtn(false);document.getElementById('tDisp').classList.add('blink');beepEnd();return;}
   setRing(tTotal>0?tSec/tTotal:0);setDisp(fmt(tSec),tMode==='amrap'?'AMRAP':'','');
-  if(tSec<=3)beepCountdown();
+  if(tSec<=3&&prev>tSec)beepCountdown();
 }
 function tabTick(){
-  tabRem--;
-  if(tabRem<=0){
-    if(tabPhase==='work'){tabPhase='rest';tabRem=10;beepTransition();setDisp(fmt(tabRem),'REST',`Round ${tabRound} / ${cR}`);}
-    else{tabRound++;if(tabRound>cR){setDisp('00:00','Terminé!',`${cR} rounds`);clearInterval(tInterval);tRunning=false;setPauseBtn(false);document.getElementById('tDisp').classList.add('blink');beepEnd();return;}tabPhase='work';tabRem=20;beepTransition();}
+  const elapsed=Math.floor((Date.now()-_tabWall)/1000);
+  const newRem=Math.max(0,_tabRemAtStart-elapsed);
+  const prev=tabRem;
+  tabRem=newRem;
+  if(tabRem<=0&&prev>0){
+    if(tabPhase==='work'){tabPhase='rest';tabRem=10;_tabRemAtStart=10;_tabWall=Date.now();_tabPhaseLen=10;beepTransition();}
+    else{tabRound++;if(tabRound>cR){setDisp('00:00','Terminé!',`${cR} rounds`);clearInterval(tInterval);tRunning=false;setPauseBtn(false);document.getElementById('tDisp').classList.add('blink');beepEnd();return;}tabPhase='work';tabRem=20;_tabRemAtStart=20;_tabWall=Date.now();_tabPhaseLen=20;beepTransition();}
   }
   const total=tabPhase==='work'?20:10;
   setRing(tabRem/total);setDisp(fmt(tabRem),tabPhase==='work'?'WORK':'REST',`Round ${tabRound} / ${cR}`);
-  if(tabRem<=3)beepCountdown();
+  if(tabRem<=3&&tabRem>0)beepCountdown();
 }
+
+// ─── WAKE FROM LOCK ───
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'&&tRunning){
+    // Recalc on wake — interval already handles it, just force a tick
+    if(tMode==='tabata')tabTick();
+    else if(tMode!=='stopwatch')cdTick();
+  }
+});
 
 // ─── INIT ───
 const now=new Date();
 document.getElementById('dateStr').textContent=now.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
+// Open today's day automatically (0=Mon...4=Fri, Sat/Sun → Mon)
+const _dow = new Date().getDay(); // 0=Sun,1=Mon,...,6=Sat
+activeDay = (_dow === 0 || _dow === 6) ? 0 : _dow - 1;
 renderStrip();
 renderDay();
 </script>
